@@ -13,8 +13,8 @@ def _log_error(msg: str):
     sys.stderr.write(f"[X ERROR] {msg}\n")
     sys.stderr.flush()
 
-# xAI uses chat completions endpoint
-XAI_CHAT_URL = "https://api.x.ai/v1/chat/completions"
+# xAI uses responses endpoint with Agent Tools API
+XAI_RESPONSES_URL = "https://api.x.ai/v1/responses"
 
 # Depth configurations: (min, max) posts to request
 DEPTH_CONFIG = {
@@ -91,14 +91,13 @@ def search_x(
     # Adjust timeout based on depth
     timeout = 60 if depth == "quick" else 90 if depth == "default" else 120
 
-    # Use chat completions format with search enabled
+    # Use Agent Tools API with x_search tool
     payload = {
         "model": model,
-        "messages": [
-            {
-                "role": "system",
-                "content": "You are a research assistant with access to real-time X (Twitter) data. Search X and return structured results."
-            },
+        "tools": [
+            {"type": "x_search"}
+        ],
+        "input": [
             {
                 "role": "user",
                 "content": X_SEARCH_PROMPT.format(
@@ -110,15 +109,9 @@ def search_x(
                 ),
             }
         ],
-        "search_parameters": {
-            "mode": "auto",
-            "sources": [{"type": "x"}],
-            "from_date": from_date,
-            "to_date": to_date,
-        },
     }
 
-    return http.post(XAI_CHAT_URL, payload, headers=headers, timeout=timeout)
+    return http.post(XAI_RESPONSES_URL, payload, headers=headers, timeout=timeout)
 
 
 def parse_x_response(response: Dict[str, Any]) -> List[Dict[str, Any]]:

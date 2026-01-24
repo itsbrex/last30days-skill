@@ -9,11 +9,11 @@ from . import cache, http
 OPENAI_MODELS_URL = "https://api.openai.com/v1/models"
 OPENAI_FALLBACK_MODELS = ["gpt-5.2", "gpt-5.1", "gpt-5", "gpt-4o"]
 
-# xAI API
+# xAI API - Agent Tools API requires grok-4 family
 XAI_MODELS_URL = "https://api.x.ai/v1/models"
 XAI_ALIASES = {
-    "latest": "grok-3",
-    "stable": "grok-3",
+    "latest": "grok-4-1-fast",  # Required for x_search tool
+    "stable": "grok-4-1-fast",
 }
 
 
