@@ -74,39 +74,59 @@ echo "Please edit it to add your API keys, then run the skill again."
 
 ---
 
-## Research Execution
+## Research Execution: Three Parallel Agents
 
-Run the research orchestrator with the TOPIC.
+**Display this to the user immediately:**
+```
+🚀 Deploying research agents...
+├─ 🟠 Reddit Agent: Scanning subreddits for discussions...
+├─ 🔵 X Agent: Following the conversation on X...
+└─ 🌐 Web Agent: Searching blogs, docs, and news...
+```
+
+**Run all three agents IN PARALLEL:**
+
+**Agent 1: Reddit + X** (via Python script)
+```bash
+python3 ~/.claude/skills/last30days/scripts/last30days.py "$ARGUMENTS" --emit=compact 2>&1
+```
+
+**Agent 2: WebSearch** (run simultaneously using WebSearch tool)
+Search for: `{TOPIC} 2026` (or current year)
+- Find 8-15 high-quality web pages
+- EXCLUDE reddit.com, x.com, twitter.com (covered by Agent 1)
+- INCLUDE: blogs, tutorials, docs, news, GitHub repos
+
+**Agent 3: Backup WebSearch** (different angle)
+Search for: `{TOPIC} best practices tutorial guide`
+- Find 5-10 additional sources
+- Focus on how-to content and authoritative guides
 
 **Depth options** (passed through from user's command):
 - `--quick` → Faster, fewer sources (8-12 each)
 - (default) → Balanced (20-30 each)
 - `--deep` → Comprehensive (50-70 Reddit, 40-60 X)
 
-```bash
-python3 ~/.claude/skills/last30days/scripts/last30days.py "$ARGUMENTS" --include-web --emit=compact 2>&1
-```
-
 ---
 
-## WebSearch Execution
+## Judge Agent: Synthesize All Sources
 
-**CRITICAL**: After the Python script completes, if you see `### WEBSEARCH REQUIRED ###` in the output, you MUST use your WebSearch tool to find additional sources.
+**After all agents complete, display:**
+```
+✅ All agents reported back
+├─ Reddit Agent: Found {n} threads
+├─ X Agent: Found {n} posts
+└─ Web Agent: Found {n} pages
 
-**WebSearch query**: Use the TOPIC to search for recent content (last 30 days).
+⚖️ Judge Agent: Synthesizing insights...
+```
 
-**What to search for**:
-- Blog posts, tutorials, documentation about {TOPIC}
-- News articles, announcements
-- Technical guides, best practices
-
-**What to EXCLUDE** (already covered by Reddit/X):
-- reddit.com URLs
-- x.com or twitter.com URLs
-
-**How many**: Find 8-15 high-quality, relevant web pages.
-
-**After searching**: Include the WebSearch results in your synthesis. WebSearch results supplement Reddit/X but should be weighted LOWER (they lack engagement metrics like upvotes/likes that indicate community validation).
+**The Judge Agent must:**
+1. Weight Reddit/X sources HIGHER (they have engagement signals: upvotes, likes)
+2. Weight WebSearch sources LOWER (no engagement data)
+3. Identify patterns that appear across ALL three sources (strongest signals)
+4. Note any contradictions between sources
+5. Extract the top 3-5 actionable insights
 
 ---
 
@@ -157,10 +177,10 @@ KEY PATTERNS I'll use:
 📊 Research Complete
 
 Analyzed {total_sources} sources from the last 30 days
-├─ Reddit: {n} threads │ {sum} upvotes │ {sum} comments
-├─ X: {n} posts │ {sum} likes │ {sum} reposts
-├─ Web: {n} pages │ {domains}
-└─ Top voices: r/{sub1}, r/{sub2}, @{handle1}, @{handle2}
+├─ 🟠 Reddit: {n} threads │ {sum} upvotes │ {sum} comments
+├─ 🔵 X: {n} posts │ {sum} likes │ {sum} reposts
+├─ 🌐 Web: {n} pages │ {domains}
+└─ Top voices: r/{sub1}, r/{sub2} │ @{handle1}, @{handle2} │ {web_author} on {site}
 
 ---
 Share your vision for what you want to create and I'll write a thoughtful prompt you can copy-paste directly into {TARGET_TOOL}.
