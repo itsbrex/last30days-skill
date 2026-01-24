@@ -97,6 +97,38 @@ This prompt was generated based on research from 10 Reddit threads (294 upvotes)
 
 ---
 
+## Example: Discover Viral Trends (Dog as Human)
+
+**Query:** `/last30days using ChatGPT to make images of dogs`
+
+**Research Output:**
+> The Reddit community is obsessed with the "dog as human" trend - uploading photos of their dogs and asking ChatGPT to show what they'd look like as a person (threads with 600-900+ upvotes). Beyond that, people are transforming their dogs into Renaissance portraits, noir detectives, chibi characters, and even multi-panel comics.
+
+**Key patterns discovered:**
+1. Upload reference photo first - ChatGPT works best with your actual dog's image
+2. "As a human" transformation - The viral trend
+3. Style/era transformations - Renaissance, noir, chibi, cartoon
+4. Scene placement - French bistro, prison yard, detective office
+5. Specific visual details - Lighting, background, expression, accessories
+
+**Then asked:** "what would my dog look like as a human prompt"
+
+**Generated Prompt:**
+
+```
+Look at this photo of my dog. Create an image showing what they would look like
+as a human person. Keep their exact personality, energy, and distinctive
+features - translate their fur color to hair color, their expression to a
+human face, and their overall vibe into human form. Make it a realistic
+portrait photo, not a cartoon.
+```
+
+*How to use: Upload your dog's photo first, then paste this prompt.*
+
+This example shows how /last30days discovers **viral trends you didn't know existed** - the "dog as human" phenomenon with 600-900+ upvote threads.
+
+---
+
 ## Options
 
 | Flag | Description |
