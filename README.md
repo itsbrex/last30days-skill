@@ -105,6 +105,75 @@ This example shows /last30days learning **domain-specific prompting techniques**
 
 ---
 
+## Example: iOS App Mockup (Nano Banana Pro)
+
+**Query:** `/last30days prompting tips for nano banana pro for ios designs`
+
+**Research Output:**
+> The community has converged on JSON-structured prompts for UI work - multiple viral posts from @brindleyai, @bananababydoll, and @fofrAI use detailed JSON with nested objects for subject, scene, and style. The key workflow from @fofrAI: take an existing image, have Gemini generate a JSON prompt from it, then iterate. For iOS specifically, @paji_a and @chongdashu both documented using Nano Banana Pro for iOS app mockup designs in "vibe coding" workflows.
+>
+> The web guides emphasize thinking in layers: define the window frame first, then UI layout (sidebars, nav bars, cards), then text on buttons/headings. Google's official prompting guide says to drop the "4k masterpiece trending on artstation" spam - Nano Banana Pro understands natural language. For tight layouts, use an 8pt grid and limit screens to 6-8 elements.
+
+**Key patterns discovered:**
+1. JSON prompt format with nested sections (subject, scene, style, device)
+2. Layer-based structure - frame -> layout regions -> content -> text labels
+3. iOS 18 / Material Design 3 references - rounded corners, soft shadows, vibrant primary
+4. iPhone frame specification - "inside realistic iPhone 16 Pro frame"
+5. Wireframe-to-mockup workflow - upload sketch, request high-fidelity conversion
+6. 8pt grid + 6-8 elements max per screen for clean density
+7. Iterative editing - don't re-roll, ask for specific changes if 80% correct
+
+**Then asked:** "make a mock-up of an app for moms who swim"
+
+**Generated Prompt:**
+
+```json
+{
+  "image_type": "UI mockup",
+  "device": {
+    "frame": "iPhone 16 Pro",
+    "display": "realistic screen with subtle reflection",
+    "orientation": "portrait"
+  },
+  "app_concept": "SwimMom - fitness and community app for mothers who swim",
+  "screen": "home dashboard",
+  "design_system": {
+    "style": "iOS 18 native",
+    "corners": "rounded, 16px radius",
+    "shadows": "soft drop shadows, subtle depth",
+    "spacing": "8pt grid, generous whitespace"
+  },
+  "color_palette": {
+    "primary": "calming aqua blue (#4ECDC4)",
+    "secondary": "warm coral (#FF6B6B)",
+    "background": "clean white with soft blue gradient header",
+    "accents": "pool water ripple patterns, subtle"
+  },
+  "layout": {
+    "header": "greeting 'Good morning, Sarah' with small wave icon, profile avatar top right",
+    "hero_card": "today's swim stats - laps completed, calories burned, time in pool - with circular progress ring",
+    "section_2": "horizontal scroll of upcoming mom swim meetups with location pills and participant avatars",
+    "section_3": "two cards side by side - 'My Goals' with streak counter, 'Find a Pool' with map pin icon",
+    "bottom_nav": "5 icons - Home (active), Workouts, Community, Schedule, Profile"
+  },
+  "visual_details": {
+    "illustrations": "friendly, minimal line art of swimming figure",
+    "typography": "SF Pro Display, clean hierarchy",
+    "mood": "energizing yet calm, supportive community feel"
+  }
+}
+```
+
+**The Result:**
+
+<p align="center">
+  <img src="assets/swimmom-mockup.jpeg" width="400" alt="SwimMom iOS app mockup"/>
+</p>
+
+This example shows /last30days learning **AI image generation prompting patterns** (JSON structure, layer-based thinking, iOS design system references) and applying them to create a production-quality app mockup in one shot.
+
+---
+
 ## Example: Discover Viral Trends (Dog as Human)
 
 **Query:** `/last30days using ChatGPT to make images of dogs`
