@@ -243,11 +243,11 @@ KEY PATTERNS I'll use:
 
 ```
 ---
-All agents reported back!
-- Reddit: {n} threads | {sum} upvotes | {sum} comments
-- X: {n} posts | {sum} likes | {sum} reposts (via Bird/xAI)
-- Web: {n} pages | {domains}
-- Top voices: r/{sub1}, r/{sub2} | @{handle1}, @{handle2}
+✅ All agents reported back!
+├─ 🟠 Reddit: {n} threads │ {sum} upvotes │ {sum} comments
+├─ 🔵 X: {n} posts │ {sum} likes │ {sum} reposts (via Bird/xAI)
+├─ 🌐 Web: {n} pages │ {domains}
+└─ Top voices: r/{sub1}, r/{sub2} │ @{handle1}, @{handle2}
 ```
 
 **LAST - Invitation:**
