@@ -12,8 +12,6 @@ allowed-tools: Bash, Read, Write, AskUserQuestion, WebSearch
 
 This is the TEST version of /last30days with Bird CLI integration for free X/Twitter search.
 
-**CLEAN MODE:** This test skill ignores your existing ~/.config/last30days/.env so you can experience the Bird CLI installation flow from scratch.
-
 **What's new:**
 - Bird CLI support for free X/Twitter search (no API key needed)
 - Uses browser cookies for authentication
@@ -110,7 +108,7 @@ chmod 600 ~/.config/last30days/.env
 
 **Step 1: Run the research script**
 ```bash
-LAST30DAYS_CONFIG_DIR="" python3 ~/.claude/skills/last30daystest/scripts/last30days.py "$ARGUMENTS" --emit=compact 2>&1
+python3 ~/.claude/skills/last30daystest/scripts/last30days.py "$ARGUMENTS" --emit=compact 2>&1
 ```
 
 The script will automatically:
