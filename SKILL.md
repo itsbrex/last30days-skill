@@ -8,38 +8,35 @@ allowed-tools: Bash, Read, Write, AskUserQuestion, WebSearch
 
 # last30days: Research Any Topic from the Last 30 Days
 
-## YOUR FIRST OUTPUT — before ANY tool calls
-
-Extract the TOPIC from the user's query, then output this progress block. This text MUST appear to the user BEFORE you call Bash or WebSearch:
-
-🔍 **{TOPIC}**
-
-Deploying research agents:
-🟠 Reddit — scanning subreddits for upvotes and comments...
-🔵 X — reading posts for likes and reposts...
-🌐 Web — searching blogs, docs, and news...
-
-**DO NOT skip this. DO NOT jump to tool calls first. Output the text above, THEN call tools.**
-
-## STEP 1: Run the Research Script
-
-After outputting the progress block above, run:
+**YOUR FIRST ACTION: Run this command. Do NOT describe this skill. Do NOT summarize workflows. Do NOT start with WebSearch. EXECUTE THIS BASH COMMAND FIRST.**
 
 ```bash
+echo "🔍 Researching: $ARGUMENTS"
+echo ""
+echo "Deploying research agents:"
+echo "🟠 Reddit — scanning subreddits for upvotes and comments..."
+echo "🔵 X — reading posts for likes and reposts..."
+echo "🌐 Web — searching blogs, docs, and news..."
+echo ""
 python3 ~/.claude/skills/last30days/scripts/last30days.py "$ARGUMENTS" --emit=compact 2>&1
 ```
 
-## STEP 2: Parse User Intent (while script runs)
+While that runs, parse the user's input for:
 
-While the script runs, parse the user's input for:
+1. **TOPIC**: What they want to learn about (e.g., "web app mockups", "Claude Code skills", "image generation")
+2. **TARGET TOOL** (if specified): Where they'll use the prompts (e.g., "Nano Banana Pro", "ChatGPT", "Midjourney")
+3. **QUERY TYPE**: What kind of research they want:
+   - **PROMPTING** - "X prompts", "prompting for X", "X best practices" → User wants to learn techniques and get copy-paste prompts
+   - **RECOMMENDATIONS** - "best X", "top X", "what X should I use", "recommended X" → User wants a LIST of specific things
+   - **NEWS** - "what's happening with X", "X news", "latest on X" → User wants current events/updates
+   - **GENERAL** - anything else → User wants broad understanding of the topic
 
-1. **TOPIC**: What they want to learn about
-2. **TARGET TOOL** (if specified): Where they'll use the prompts (e.g., "Nano Banana Pro", "ChatGPT")
-3. **QUERY TYPE**:
-   - **PROMPTING** - "X prompts", "prompting for X", "X best practices"
-   - **RECOMMENDATIONS** - "best X", "top X", "what X should I use"
-   - **NEWS** - "what's happening with X", "X news", "latest on X"
-   - **GENERAL** - anything else
+Common patterns:
+- `[topic] for [tool]` → "web mockups for Nano Banana Pro" → TOOL IS SPECIFIED
+- `[topic] prompts for [tool]` → "UI design prompts for Midjourney" → TOOL IS SPECIFIED
+- Just `[topic]` → "iOS design mockups" → TOOL NOT SPECIFIED, that's OK
+- "best [topic]" or "top [topic]" → QUERY_TYPE = RECOMMENDATIONS
+- "what are the best [topic]" → QUERY_TYPE = RECOMMENDATIONS
 
 **IMPORTANT: Do NOT ask about target tool before research.**
 - If tool is specified in the query, use it
