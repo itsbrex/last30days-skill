@@ -40,6 +40,7 @@ from . import (
     xai_x,
     xiaohongshu_api,
     xquik,
+    xurl_x,
     youtube_yt,
 )
 from .cluster import cluster_candidates
@@ -895,6 +896,9 @@ def _retrieve_stream(
                 depth=depth,
             )
             return xai_x.parse_x_response(result), {}
+        if backend == "xurl":
+            result = xurl_x.search_x(subquery.search_query, depth=depth)
+            return xurl_x.parse_x_response(result, topic=subquery.search_query), {}
         raise RuntimeError("No X backend is available.")
     if source == "youtube":
         # Use raw_topic so expand_youtube_queries() generates diverse variants
