@@ -297,7 +297,7 @@ Common patterns:
 
 - Always active: Reddit, Hacker News, Polymarket
 - If gh CLI is installed (check `which gh`): add GitHub
-- If AUTH_TOKEN/CT0 or XAI_API_KEY or FROM_BROWSER is set: add X
+- If AUTH_TOKEN/CT0 or XAI_API_KEY or FROM_BROWSER is set, or xurl CLI is installed and authenticated: add X
 - If yt-dlp is installed (check `which yt-dlp`): add YouTube
 - If SCRAPECREATORS_API_KEY is set and INCLUDE_SOURCES contains tiktok: add TikTok
 - If SCRAPECREATORS_API_KEY is set and INCLUDE_SOURCES contains instagram: add Instagram
@@ -1551,7 +1551,7 @@ Want another prompt? Just tell me what you're creating next.
 **What this skill does:**
 - Sends search queries to ScrapeCreators API (`api.scrapecreators.com`) for TikTok and Instagram search, and as a Reddit backup when public Reddit is unavailable (requires SCRAPECREATORS_API_KEY)
 - Legacy: Sends search queries to OpenAI's Responses API (`api.openai.com`) for Reddit discovery (fallback if no SCRAPECREATORS_API_KEY)
-- Sends search queries to Twitter's GraphQL API (via optional user-provided AUTH_TOKEN/CT0 env vars - no browser session access) or xAI's API (`api.x.ai`) for X search
+- Sends search queries to Twitter's GraphQL API (via optional user-provided AUTH_TOKEN/CT0 env vars - no browser session access), xAI's API (`api.x.ai`), or the official X API v2 via xurl CLI (OAuth2, auto-detected when installed and authenticated) for X search
 - Sends search queries to Algolia HN Search API (`hn.algolia.com`) for Hacker News story and comment discovery (free, no auth)
 - Sends search queries to Polymarket Gamma API (`gamma-api.polymarket.com`) for prediction market discovery (free, no auth)
 - Runs `yt-dlp` locally for YouTube search and transcript extraction (no API key, public data)
