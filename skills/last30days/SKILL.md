@@ -60,23 +60,22 @@ metadata:
       - clawhub
 ---
 
-# STEP 0: CANONICAL PATH SELF-CHECK — RUN BEFORE READING BELOW
+# STEP 0: STALE-CLONE SELF-CHECK — RUN BEFORE READING BELOW
 
-Before reading anything else in this file, verify that the SKILL.md you just loaded is the versioned cache copy, not a stale marketplace clone:
+Before reading anything else in this file, check whether you loaded SKILL.md from the one known stale-clone location: Claude Code's marketplaces directory.
+
+**Run this check:**
 
 ```bash
-CANONICAL_ROOT="$HOME/.claude/plugins/cache/last30days-skill/last30days"
-CANONICAL_LATEST=$(ls -d "$CANONICAL_ROOT"/*/ 2>/dev/null | sort -V | tail -1)
-CANONICAL_LATEST="${CANONICAL_LATEST%/}"
+CLAUDE_CACHE_LATEST=$(ls -d "$HOME/.claude/plugins/cache/last30days-skill/last30days"/*/ 2>/dev/null | sort -V | tail -1)
+CLAUDE_CACHE_LATEST="${CLAUDE_CACHE_LATEST%/}"
 ```
 
-If the SKILL.md file you just read is NOT under `$CANONICAL_LATEST/`, STOP and re-read `$CANONICAL_LATEST/SKILL.md` before proceeding. Do not run `--help`, do not plan, do not invoke the engine against any other path.
+If the SKILL.md path you just Read contains `/.claude/plugins/marketplaces/` AND `$CLAUDE_CACHE_LATEST` is non-empty, STOP and re-read `$CLAUDE_CACHE_LATEST/skills/last30days/SKILL.md` before proceeding. Otherwise the SKILL.md you have is fine — continue.
 
-**Why:** `~/.claude/plugins/marketplaces/last30days-skill/` is a git clone Claude Code auto-restores to `origin/main` on session start. It can lag the versioned cache by one or more releases. Three 2026-04-22 test runs (Linear, Coinbase) loaded SKILL.md from `marketplaces/`, ran `--help` from the same stale path, did not see the `--competitors` flag that existed in the cache, and fell back to a manual comparison plan. Result: 2 of 3 windows never invoked the feature they were asked to test.
+**Why this specific check:** `~/.claude/plugins/marketplaces/last30days-skill/` is a git clone Claude Code auto-restores to `origin/main` on session start. It can lag the versioned cache by one or more releases. Three 2026-04-22 test runs (Linear, Coinbase) loaded SKILL.md from `marketplaces/`, ran `--help` from the same stale path, did not see the `--competitors` flag that existed in the cache, and fell back to a manual comparison plan. Result: 2 of 3 windows never invoked the feature they were asked to test. STEP 0 defends against that one Claude Code-specific bug.
 
-**How to self-check:** the file path you used in your last Read tool call should match `$CANONICAL_LATEST/SKILL.md`. If it contains `marketplaces/` or any other prefix, that is the stale-path failure mode. Re-read from `$CANONICAL_LATEST/SKILL.md` and restart this contract from the top.
-
-The same pinned resolver appears later in Step 1 for the engine Bash invocation. That guard is necessary but insufficient — by the time you reach Step 1, you may have already internalized an out-of-date flag list from the stale SKILL.md above it. This STEP 0 runs first so the CONTRACT itself is read from the right file.
+**Other install paths are fine:** `~/.codex/skills/`, `~/.agents/skills/`, an `npx skills add` install dir, or a repo checkout are all valid load points - the resolver in Step 1 picks them up. Do NOT abort or hop on those paths.
 
 ---
 
@@ -88,7 +87,7 @@ You are inside the `/last30days` SKILL. This is a specific research tool with a 
 
 **How v3.0.7 fixes it:** three structural anchors.
 1. **The MANDATORY first-line badge** (`🌐 last30days v{VERSION} · synced {YYYY-MM-DD}`) at the top of every response is the LAW 2 / LAW 4 enforcement anchor. See "BADGE (MANDATORY, FIRST LINE OF OUTPUT)" in the synthesis section.
-2. **The pinned SKILL_ROOT resolution** in the engine Bash calls always points to the public plugin cache, never `~/.openclaw/` or other stale copies.
+2. **The SKILL_ROOT resolver** in the engine Bash calls walks a precedence list of known install locations and picks the highest-versioned freshest copy, never `~/.openclaw/` or other stale copies.
 3. **This preface** tells you plainly: do NOT improvise. Follow SKILL.md top to bottom.
 
 If you catch yourself about to write a `##` section header in a GENERAL-query body, a custom title line, a `Sources:` bullet list, a `for dir in ...` path-discovery loop, or a bare `python3 scripts/last30days.py "{TOPIC}"` engine call with no pre-flight flags — stop. Those are the exact failure modes the LAWs and this contract exist to prevent. The 10/10 beta validation from 2026-04-18 and the 0/8 public v3.0.6 regression from the same day had THE SAME MODEL and SIMILAR SKILL.md CONTENT; the delta is the three anchors this release restores. Read SKILL.md top to bottom before emitting your first response.
@@ -105,7 +104,7 @@ These anchors used to live at line 1094 of this file. Three independent Opus 4.7
 🌐 last30days v{VERSION} · synced {YYYY-MM-DD}
 ```
 
-Replace `{VERSION}` with the installed plugin version (`jq -r '.version' "$SKILL_ROOT/../../.codex-plugin/plugin.json" 2>/dev/null || jq -r '.version' "$SKILL_ROOT/.claude-plugin/plugin.json"`) and `{YYYY-MM-DD}` with today's date. No other text on this line. One blank line after, then the synthesis begins.
+Replace `{VERSION}` with the installed plugin version (`jq -r '.version' "$SKILL_ROOT/../../.claude-plugin/plugin.json" 2>/dev/null || awk '/^version:/{gsub(/"/,"",$2); print $2; exit}' "$SKILL_ROOT/SKILL.md"`) and `{YYYY-MM-DD}` with today's date. No other text on this line. One blank line after, then the synthesis begins.
 
 **Why the badge is MANDATORY:** it is the structural anchor for the canonical output shape. Without it the model drifts into blog-post narrative format with `##` section headers and invented titles, violating LAW 2 and LAW 4. The 2026-04-18 public v3.0.6 0/8 regression produced outputs with section headers like "The headline", "Why he is everywhere", "1. gstack dominates", "The 'Homecoming' peak". Direct cause: this anchor was absent. Do NOT skip the badge. Do NOT describe it. Do NOT paraphrase it. Emit it verbatim as line 1.
 
@@ -869,36 +868,38 @@ Store your plan as `QUERY_PLAN_JSON` - you'll pass it to the script in the next 
 **IMPORTANT: Include `--x-handle={RESOLVED_HANDLE}` in the command. For comparison mode: Pass `--x-handle={TOPIC_A_HANDLE}` to the first pass, `--x-handle={TOPIC_B_HANDLE}` to the second pass, and both to the head-to-head pass. Also include `--subreddits={RESOLVED_SUBREDDITS}`, `--tiktok-hashtags={RESOLVED_HASHTAGS}`, `--tiktok-creators={RESOLVED_TIKTOK_CREATORS}`, and `--ig-creators={RESOLVED_IG_CREATORS}` from Step 0.55. Omit any flag where the value was not resolved (empty).**
 
 ```bash
-# PIN SKILL_ROOT to an installed plugin cache first (highest-version dir wins on upgrade).
-# Prefer Codex's skill package path when installed as a Codex plugin. Keep the Claude
-# plugin-root fallback for other hosts, then fall back to a repo checkout.
-SKILL_ROOT="$(ls -d "$HOME/.codex/plugins/cache/"*/last30days/*/skills/last30days/ 2>/dev/null | sort -V | tail -1)"
-SKILL_ROOT="${SKILL_ROOT%/}"
+# Resolve SKILL_ROOT by walking a precedence list of known install locations.
+# Claude Code plugin cache wins when present (highest version dir picked on upgrade),
+# then common per-harness skill dirs, then a repo checkout.
+SKILL_ROOT=""
 
-# Fallback for Claude plugin cache.
-if [ -z "$SKILL_ROOT" ] || [ ! -f "$SKILL_ROOT/scripts/last30days.py" ]; then
-  CLAUDE_PLUGIN_ROOT="$(ls -d "$HOME/.claude/plugins/cache/last30days-skill/last30days/"*/ 2>/dev/null | sort -V | tail -1)"
-  CLAUDE_PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT%/}"
-  if [ -n "$CLAUDE_PLUGIN_ROOT" ]; then
-    if [ -f "$CLAUDE_PLUGIN_ROOT/skills/last30days/scripts/last30days.py" ]; then
-      SKILL_ROOT="$CLAUDE_PLUGIN_ROOT/skills/last30days"
-    elif [ -f "$CLAUDE_PLUGIN_ROOT/scripts/last30days.py" ]; then
-      SKILL_ROOT="$CLAUDE_PLUGIN_ROOT"
-    fi
+# 1. Claude Code plugin cache (versioned). Both shapes ship in the wild — pick the freshest.
+CLAUDE_PLUGIN_ROOT="$(ls -d "$HOME/.claude/plugins/cache/last30days-skill/last30days/"*/ 2>/dev/null | sort -V | tail -1)"
+CLAUDE_PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT%/}"
+if [ -n "$CLAUDE_PLUGIN_ROOT" ]; then
+  if [ -f "$CLAUDE_PLUGIN_ROOT/skills/last30days/scripts/last30days.py" ]; then
+    SKILL_ROOT="$CLAUDE_PLUGIN_ROOT/skills/last30days"
+  elif [ -f "$CLAUDE_PLUGIN_ROOT/scripts/last30days.py" ]; then
+    SKILL_ROOT="$CLAUDE_PLUGIN_ROOT"
   fi
 fi
 
-# Fallback for repo checkout / Gemini / local development hosts where the plugin cache does not exist.
+# 2. Common per-harness skill dirs and repo checkout (npx skills, Codex, Agents, Gemini, etc).
 if [ -z "$SKILL_ROOT" ] || [ ! -f "$SKILL_ROOT/scripts/last30days.py" ]; then
-  for dir in "." "./skills/last30days" "${CLAUDE_PLUGIN_ROOT:-}" "${GEMINI_EXTENSION_DIR:-}"; do
+  for dir in \
+      "$HOME/.codex/skills/last30days" \
+      "$HOME/.agents/skills/last30days" \
+      "./skills/last30days" \
+      "./.skills/last30days" \
+      "." \
+      "${GEMINI_EXTENSION_DIR:-}"; do
     [ -n "$dir" ] && [ -f "$dir/scripts/last30days.py" ] && SKILL_ROOT="$dir" && break
   done
 fi
 
 if [ -z "${SKILL_ROOT:-}" ] || [ ! -f "$SKILL_ROOT/scripts/last30days.py" ]; then
-  echo "ERROR: Could not find scripts/last30days.py in Codex/Claude plugin cache or repo checkout" >&2
-  echo "Expected Codex: $HOME/.codex/plugins/cache/{MARKETPLACE}/last30days/{VERSION}/skills/last30days/scripts/last30days.py" >&2
-  echo "Expected Claude: $HOME/.claude/plugins/cache/last30days-skill/last30days/{VERSION}/skills/last30days/scripts/last30days.py" >&2
+  echo "ERROR: Could not find scripts/last30days.py in any known install location" >&2
+  echo "Searched: ~/.claude/plugins/cache/, ~/.codex/skills/, ~/.agents/skills/, ./skills/last30days, ./.skills/last30days, ." >&2
   exit 1
 fi
 
