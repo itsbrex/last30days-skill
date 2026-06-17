@@ -214,6 +214,7 @@ def run(
     tiktok_creators: list[str] | None = None,
     ig_creators: list[str] | None = None,
     lookback_days: int = 30,
+    as_of_date: str | None = None,
     github_user: str | None = None,
     github_repos: list[str] | None = None,
     hiring_signals_mode: bool = False,
@@ -221,7 +222,7 @@ def run(
 ) -> schema.Report:
     settings = DEPTH_SETTINGS[depth]
     requested_sources = normalize_requested_sources(requested_sources)
-    from_date, to_date = dates.get_date_range(lookback_days)
+    from_date, to_date = dates.get_date_range(lookback_days, as_of_date=as_of_date)
 
     if mock:
         runtime = providers.mock_runtime(config, depth)
@@ -578,7 +579,17 @@ def _normalize_score_dedupe(
         freshness_mode=freshness_mode,
     )
     prepared_query = relevance.PreparedQuery(ranking_query)
-    normalized = signals.annotate_stream(normalized, prepared_query, freshness_mode)
+    lookback_window_days = (
+        datetime.strptime(to_date, "%Y-%m-%d").date()
+        - datetime.strptime(from_date, "%Y-%m-%d").date()
+    ).days
+    normalized = signals.annotate_stream(
+        normalized,
+        prepared_query,
+        freshness_mode,
+        reference_date=to_date,
+        max_days=lookback_window_days,
+    )
     if source != "jobs":
         normalized = signals.prune_low_relevance(normalized)
     normalized = dedupe.dedupe_items(normalized)

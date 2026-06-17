@@ -1659,7 +1659,12 @@ def _assess_data_freshness(report: schema.Report) -> str | None:
     recent_items = [
         item
         for item in dated_items
-        if (_days_ago := dates.days_ago(item.published_at)) is not None and _days_ago <= 7
+        if (
+            _days_ago := dates.days_ago(
+                item.published_at,
+                reference_date=report.range_to,
+            )
+        ) is not None and _days_ago <= 7
     ]
     if len(recent_items) < 3:
         return f"Limited recent data: only {len(recent_items)} of {len(dated_items)} dated items are from the last 7 days."
