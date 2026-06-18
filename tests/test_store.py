@@ -464,18 +464,27 @@ def test_store_findings_upserts_on_concurrent_duplicate_url(temp_db, monkeypatch
     run2 = store.record_run(topic["id"], source_mode="v3")
     # Without ON CONFLICT this raises sqlite3.IntegrityError on the UNIQUE
     # source_url and rolls back the batch.
-    store.store_findings(run2, topic["id"], [{**finding, "engagement_score": 9.0}])
+    counts = store.store_findings(run2, topic["id"], [{**finding, "engagement_score": 9.0}])
+
+    # The conflict-resolved row is an update, not a new finding. The counters
+    # must reflect that, not inflate findings_new.
+    assert counts == {"new": 0, "updated": 1}
 
     conn = sqlite3.connect(str(temp_db))
     rows = conn.execute(
         "SELECT engagement_score, sighting_count FROM findings WHERE source_url = ?",
         ("https://reddit.com/race",),
     ).fetchall()
+    run_counts = conn.execute(
+        "SELECT findings_new, findings_updated FROM research_runs WHERE id = ?",
+        (run2,),
+    ).fetchone()
     conn.close()
 
     assert len(rows) == 1  # not duplicated, not crashed
     assert rows[0][0] == 9.0  # engagement upgraded via max()
     assert rows[0][1] == 2  # sighting_count bumped by the conflict update
+    assert run_counts == (0, 1)  # research_runs counters not inflated
 
 
 def test_store_findings_skips_items_without_url(temp_db):

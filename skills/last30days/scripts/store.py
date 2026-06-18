@@ -476,6 +476,21 @@ def store_findings(
 
         new_count = len(insert_rows)
         updated_count = len(update_rows)
+        if insert_rows:
+            # A row whose URL was inserted by a concurrent run between our SELECT
+            # and the upsert resolves via ON CONFLICT (an update, not a new row),
+            # bumping its sighting_count above 1. Re-derive the split so
+            # research_runs.findings_new isn't inflated by conflict-resolved rows
+            # (source_url is field index 3 in each insert tuple).
+            inserted_urls = [row[3] for row in insert_rows]
+            placeholders = ",".join("?" for _ in inserted_urls)
+            conflicted = conn.execute(
+                f"SELECT COUNT(*) FROM findings "
+                f"WHERE source_url IN ({placeholders}) AND sighting_count > 1",
+                inserted_urls,
+            ).fetchone()[0]
+            new_count -= conflicted
+            updated_count += conflicted
         _record_sightings(conn, run_id, topic_id, with_urls, existing_by_url)
         conn.execute(
             "UPDATE research_runs SET findings_new = ?, findings_updated = ? WHERE id = ?",
