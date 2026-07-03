@@ -42,6 +42,7 @@ from . import (
     schema,
     signals,
     snippet,
+    stocktwits,
     techmeme,
     threads,
     tiktok,
@@ -71,7 +72,7 @@ SEARCH_ALIAS = {
     "xquik": "x",  # xquik is a backend of the single "x" source, not its own source
 }
 
-MAX_SOURCE_FETCHES: dict[str, int] = {"x": 2, "jobs": 1, "linkedin": 1}
+MAX_SOURCE_FETCHES: dict[str, int] = {"x": 2, "jobs": 1, "linkedin": 1, "stocktwits": 1}
 
 # Per-handle result caps for the X handle-search lanes. The FROM lane (the
 # subject's own timeline) is the single best source for a person topic, so it
@@ -148,6 +149,9 @@ def available_sources(
     if which("yt-dlp") or env.is_youtube_sc_available(config):
         available.append("youtube")
     available.extend(["hackernews", "polymarket"])
+    # StockTwits is gated to ticker/crypto topics only (flag set in run()).
+    if config.get("_financial_topic"):
+        available.append("stocktwits")
     # GitHub is reachable via the unauthenticated REST tier too, so it is
     # available even without a token/gh CLI (a token only raises rate limits).
     available.append("github")
@@ -333,6 +337,11 @@ def run(
     settings = DEPTH_SETTINGS[depth]
     requested_sources = normalize_requested_sources(requested_sources)
     from_date, to_date = dates.get_date_range(lookback_days, as_of_date=as_of_date)
+
+    # Gate StockTwits to ticker/crypto topics. Single chokepoint: when False,
+    # available_sources() never registers stocktwits, so the planner can't
+    # assign it (eligible_sources = available ∩ capabilities).
+    config["_financial_topic"] = stocktwits.is_financial_topic(topic)
 
     if mock:
         runtime = providers.mock_runtime(config, depth)
@@ -1475,6 +1484,12 @@ def _retrieve_stream(
     if source == "hackernews":
         result = hackernews.search_hackernews(subquery.search_query, from_date, to_date, depth=depth)
         return hackernews.parse_hackernews_response(result, query=subquery.search_query), {}
+    if source == "stocktwits":
+        # Pass raw_topic so symbol detection sees the full topic, not the
+        # narrowed per-subquery search_query (same rationale as reddit).
+        result = stocktwits.search_stocktwits(
+            raw_topic or topic or subquery.search_query, from_date, to_date, depth=depth)
+        return stocktwits.parse_stocktwits_response(result, query=subquery.search_query), {}
     if source == "digg":
         result = digg.search_digg(subquery.search_query, from_date, to_date, depth=depth)
         items = digg.parse_digg_response(result, query=subquery.search_query)
