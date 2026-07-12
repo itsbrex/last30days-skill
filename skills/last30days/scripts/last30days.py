@@ -376,6 +376,11 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="TARGET",
         help="Deep follow-up on a cluster from the fresh last-report.json cache",
     )
+    parser.add_argument(
+        "--discover",
+        metavar="DOMAIN",
+        help="Sweep category listings and rank 5-10 topics accelerating in a domain",
+    )
     parser.add_argument("--debug", action="store_true", help="Enable HTTP debug logging")
     parser.add_argument("--mock", action="store_true", help="Use mock retrieval fixtures")
     parser.add_argument(
@@ -992,6 +997,126 @@ def _run_drill(
     return _render_save_and_print(args, merged, None, synthesis_md, config)
 
 
+def _save_discovery_output(
+    rendered: str,
+    *,
+    domain: str,
+    emit: str,
+    save_dir: str,
+    suffix: str = "",
+) -> Path:
+    directory = Path(save_dir).expanduser().resolve()
+    directory.mkdir(parents=True, exist_ok=True)
+    extension = "json" if emit == "json" else "md"
+    suffix_part = f"-{suffix}" if suffix else ""
+    stem = f"{slugify(domain)}-discover-raw{suffix_part}"
+    date_str = datetime.datetime.now().strftime("%Y-%m-%d")
+    candidates = [directory / f"{stem}.{extension}", directory / f"{stem}-{date_str}.{extension}"]
+    candidates.extend(directory / f"{stem}-{date_str}-{index}.{extension}" for index in range(1, 100))
+    encoded = rendered.encode("utf-8")
+    for candidate in candidates:
+        try:
+            fd = os.open(candidate, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o644)
+        except FileExistsError:
+            continue
+        with os.fdopen(fd, "wb") as output:
+            output.write(encoded)
+        return candidate
+    raise RuntimeError("Could not find a unique discovery output filename")
+
+
+def _run_discover(args: argparse.Namespace, config: dict[str, object]) -> int:
+    domain = " ".join(str(args.discover or "").split())
+    if not domain:
+        sys.stderr.write("[last30days] --discover requires a non-empty domain.\n")
+        return 2
+    if args.as_of_date:
+        sys.stderr.write(
+            "[last30days] --as-of cannot be used with --discover because discovery "
+            "sweeps current live listings.\n"
+        )
+        return 2
+    if args.emit == "html" or args.publish_html:
+        sys.stderr.write("[last30days] discovery mode does not support HTML publishing yet.\n")
+        return 2
+    if args.store:
+        sys.stderr.write("[last30days] Warning: --store is not used by discovery mode.\n")
+    if args.synthesis_file:
+        sys.stderr.write("[last30days] Warning: --synthesis-file is not used by discovery mode.\n")
+
+    requested_sources = resolve_requested_sources(args.search, config)
+    if requested_sources:
+        discovery_sources = [
+            source for source in requested_sources
+            if source in pipeline.DISCOVERY_SOURCES
+        ]
+        if not discovery_sources:
+            # A configured source boundary holds even when it leaves nothing
+            # to sweep: silently widening to all feeds would query sources
+            # the user filtered out.
+            origin = "--search" if args.search is not None else "LAST30DAYS_DEFAULT_SEARCH"
+            sys.stderr.write(
+                f"[last30days] {origin} has no discovery-capable sources "
+                f"(unsupported: {', '.join(requested_sources)}); discovery "
+                f"sweeps use: {', '.join(pipeline.DISCOVERY_SOURCES)}. Pass "
+                "--search with one of those (or clear the source filter) to "
+                "run a sweep.\n"
+            )
+            return 2
+        requested_sources = discovery_sources
+    subreddits = (
+        [value.strip().removeprefix("r/") for value in args.subreddits.split(",") if value.strip()]
+        if args.subreddits else None
+    )
+    depth = "deep" if args.deep else "quick" if args.quick else "default"
+    try:
+        report = pipeline.run_discover(
+            domain=domain,
+            config=config,
+            depth=depth,
+            requested_sources=requested_sources,
+            mock=args.mock,
+            subreddits=subreddits,
+            lookback_days=args.lookback_days or 30,
+            as_of_date=args.as_of_date,
+        )
+    except ValueError as exc:
+        sys.stderr.write(f"[last30days] {exc}\n")
+        return 2
+
+    if args.emit == "json":
+        payload = schema.to_dict(report) if args.json_profile == "raw" else schema.to_discovery_export(report)
+        rendered = json.dumps(payload, indent=2, sort_keys=True)
+    else:
+        rendered = render.render_discovery(report)
+
+    if args.output:
+        output_path = save_rendered_output(rendered, args.output)
+        sys.stderr.write(f"[last30days] Saved output to {output_path}\n")
+    if args.save_dir:
+        save_path = _save_discovery_output(
+            rendered,
+            domain=domain,
+            emit=args.emit,
+            save_dir=args.save_dir,
+            suffix=args.save_suffix or "",
+        )
+        sys.stderr.write(f"[last30days] Saved output to {save_path}\n")
+    print(rendered)
+
+    strict = str(config.get("LAST30DAYS_STRICT_EXIT") or "").strip().lower()
+    degraded = [
+        source for source, outcome in report.source_status.items()
+        if outcome.state not in _STRICT_EXIT_OK_STATES
+    ]
+    if strict in {"1", "true", "yes", "on"} and degraded:
+        sys.stderr.write(
+            f"[last30days] strict-exit: degraded sources: {', '.join(sorted(degraded))}\n"
+        )
+        return 3
+    return 0
+
+
 _STRICT_EXIT_OK_STATES = {"ok", "no-results", "skipped-unconfigured"}
 
 
@@ -1361,6 +1486,18 @@ def _main(
         results["env_written"] = True
         sys.stderr.write(setup_wizard.get_setup_status_text(results) + "\n")
         return 0
+
+    if args.discover:
+        if topic:
+            sys.stderr.write(
+                "[last30days] --discover supplies the domain and cannot be combined "
+                "with a positional topic.\n"
+            )
+            return 2
+        if args.drill:
+            sys.stderr.write("[last30days] --discover and --drill are mutually exclusive.\n")
+            return 2
+        return _run_discover(args, config)
 
     if args.drill:
         if topic:
