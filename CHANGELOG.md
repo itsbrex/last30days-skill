@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.14.0] - 2026-07-12
+
+### Added
+
+- Global trending: bare `--discover` (no domain) sweeps every river feed's own hot list (r/all, Hacker News front page, Digg) with no keyword gate - `/last30days trending` now works. ([#816](https://github.com/mvanhorn/last30days-skill/pull/816))
+- Discovery is now two-stage: a listing sweep nominates candidate topics, then each nomination gets a full research pass (Reddit with comments, X, YouTube, Techmeme, arXiv, HN, Polymarket, web) before ranking - Techmeme and arXiv reach discovery for the first time, and every trend card can carry a verbatim community-voice quote with attribution plus a cross-source corroboration badge. `--discover-shallow` skips the research passes for a faster, thinner sweep. ([#816](https://github.com/mvanhorn/last30days-skill/pull/816))
+- Discovery confidence floor: every topic must clear cross-source confirmation or a genuinely strong single-source spike; when nothing clears, the run reports an honest "Nothing solid this window" (JSON `outcome: nothing-solid` with the closest `weak_signal` named) instead of ranking noise. The discovery JSON contract gains `outcome`, `weak_signal`, and per-topic `top_comment` / `corroboration_count`. ([#816](https://github.com/mvanhorn/last30days-skill/pull/816))
+
+### Fixed
+
+- Discovery no longer emits ranked junk on quiet or over-broad domains (the "sports" sweep that returned five 1-like tweets): sub-floor evidence never ranks. ([#816](https://github.com/mvanhorn/last30days-skill/pull/816))
+- An explicit `--search` source boundary now holds through discovery's research passes, not just the listing sweep; `--discover-shallow` without `--discover` errors instead of silently running a full research pass; enrichment stragglers can no longer keep the process alive past the wall-clock budget. ([#816](https://github.com/mvanhorn/last30days-skill/pull/816))
+
 ## [3.13.1] - 2026-07-12
 
 ### Added
